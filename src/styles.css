@@ -1,0 +1,253 @@
+:root {
+  /* Paleta Extraída do Hospital IPO */
+  --primary: #901C38;       /* Vinho Institucional */
+  --primary-dark: #6e1329;  /* Vinho Escuro (Hover) */
+  --primary-light: #fbeef1; /* Fundo suave de vinho */
+  
+  --secondary: #E8C491;     /* Bege/Dourado do rodapé */
+  --success: #25D366;       /* Verde (Botão Agendar/Whatsapp) */
+  --success-dark: #1da851;
+  
+  --bg-body: #f4f6f8;       /* Cinza muito claro (Clínico) */
+  --bg-card: #ffffff;
+  
+  --text-main: #2d3748;     /* Cinza escuro (Legibilidade) */
+  --text-muted: #718096;
+  
+  --border: #e2e8f0;
+  --radius: 10px;           /* Cantos levemente arredondados */
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+* { box-sizing: border-box; }
+
+body { 
+  margin: 0; 
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+  background: var(--bg-body); 
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+button, input, select { font: inherit; }
+
+/* --- Layout --- */
+.container { 
+  max-width: 1024px; 
+  margin: 0 auto; 
+  padding: 24px; 
+}
+
+.stack { display: grid; gap: 20px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.hstack { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+/* --- Cards (Visual de Prontuário/Painel) --- */
+.card { 
+  background: var(--bg-card); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius); 
+  padding: 24px; 
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--primary); /* Detalhe de marca no topo do card */
+}
+
+/* --- Tipografia --- */
+.h1 { 
+  font-size: 22px; 
+  font-weight: 600; 
+  color: var(--primary); /* Títulos na cor da marca */
+  margin: 0 0 8px; 
+  letter-spacing: -0.5px;
+}
+
+.muted { 
+  color: var(--text-muted); 
+  font-size: 14px; 
+  line-height: 1.5;
+}
+
+/* --- Botões --- */
+.btn { 
+  border: 1px solid var(--border); 
+  background: #fff; 
+  color: var(--text-main);
+  padding: 10px 18px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.btn:hover { 
+  background: #f7fafc; 
+  border-color: #cbd5e0;
+}
+
+/* Botão Primário (Vinho IPO) */
+.btn.primary { 
+  background: var(--primary); 
+  color: #fff; 
+  border-color: var(--primary); 
+}
+.btn.primary:hover { 
+  background: var(--primary-dark); 
+  border-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(144, 28, 56, 0.3);
+}
+
+/* Botão Perigo (Excluir) */
+.btn.danger { 
+  background: #fff; 
+  color: #c53030; 
+  border-color: #feb2b2; 
+}
+.btn.danger:hover { 
+  background: #fff5f5; 
+  border-color: #c53030; 
+}
+
+/* --- Formulários --- */
+.field { margin-bottom: 0; }
+.field label { 
+  display: block; 
+  font-size: 13px; 
+  font-weight: 600;
+  color: var(--text-main); 
+  margin: 0 0 8px; 
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field input, .field select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+}
+
+.field input:focus, .field select:focus { 
+  outline: none; 
+  border-color: var(--primary); 
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(144, 28, 56, 0.1);
+}
+
+/* --- Navegação --- */
+.nav { 
+  display: flex; 
+  gap: 16px; 
+  align-items: center; 
+  justify-content: space-between; 
+  margin-bottom: 20px; 
+  background: white;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* --- Tabela --- */
+.table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.table th { 
+  padding: 12px 16px; 
+  border-bottom: 2px solid var(--border); 
+  text-align: left; 
+  font-size: 12px; 
+  color: var(--text-muted); 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.table td { 
+  padding: 14px 16px; 
+  border-bottom: 1px solid var(--border); 
+  vertical-align: middle;
+}
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background-color: #fcfcfc; }
+
+/* --- Badges e Tags --- */
+.badge { 
+  font-size: 11px; 
+  padding: 4px 10px; 
+  border-radius: 20px; 
+  font-weight: 600;
+  background: var(--bg-body);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  text-transform: uppercase;
+}
+
+/* --- Avisos --- */
+.notice { padding: 16px; border-radius: var(--radius); font-size: 14px; border-left: 4px solid #cbd5e0; background: #f7fafc; }
+.notice.ok { border-color: var(--success); background: #f0fff4; color: #166534; }
+.notice.err { border-color: #c53030; background: #fff5f5; color: #c53030; }
+
+.hr { height: 1px; background: var(--border); border: 0; margin: 20px 0; }
+
+/* --- ELEMENTOS ESPECÍFICOS DO ADMIN (Tags) --- */
+.areas-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+
+.area-tag {
+  padding: 8px 16px; 
+  border-radius: 20px; 
+  border: 1px solid var(--border);
+  background: #fff; 
+  font-size: 13px; 
+  color: var(--text-muted);
+  cursor: pointer; 
+  transition: all 0.2s; 
+  user-select: none;
+  font-weight: 500;
+}
+
+.area-tag:hover { 
+  border-color: var(--primary); 
+  color: var(--primary); 
+  background: var(--primary-light);
+}
+
+/* Tag Selecionada vira Vinho */
+.area-tag.selected { 
+  background: var(--primary); 
+  color: white; 
+  border-color: var(--primary); 
+}
+
+/* --- MODAL --- */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(45, 55, 72, 0.6); /* Overlay escuro azulado */
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: white; padding: 32px; border-radius: 16px;
+  width: 100%; max-width: 550px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+  max-height: 90vh; overflow-y: auto;
+  border-top: 6px solid var(--primary); /* Topo Vinho */
+}
+
+/* --- Checkbox Unimed Customizado --- */
+input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 840px) {
+  .row, .row3 { grid-template-columns: 1fr; }
+  .nav { flex-direction: column; align-items: stretch; }
+}
