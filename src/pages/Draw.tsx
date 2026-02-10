@@ -3,6 +3,7 @@ import { AREAS } from "../data/seed";
 import { useSession } from "../state/SessionContext";
 import { useDoctors, useEvents, saveEventToFire, EventType, Doctor } from "../lib/firestore";
 
+// --- Função de Filtros ---
 function getEligibleDoctors(
   doctors: Doctor[], 
   area: string, 
@@ -10,16 +11,16 @@ function getEligibleDoctors(
   isUnimedPatient: boolean
 ) {
   return doctors.filter(d => {
-    // 1. Ativo?
+    // 1. O médico deve estar Ativo
     if (!d.active) return false;
-    
-    // 2. Área correta?
+
+    // 2. Deve ser da Área selecionada
     if (!d.areas.includes(area)) return false;
-    
-    // 3. Não pode sortear a si mesmo
+
+    // 3. Não pode ser o próprio médico logado (se for totem)
     if (actorDoctorId && d.id === actorDoctorId) return false;
-    
-    // 4. Filtro UNIMED
+
+    // 4. Filtro de Convênio
     if (isUnimedPatient && !d.canBeSelected) return false;
 
     return true;
@@ -29,16 +30,18 @@ function getEligibleDoctors(
 export default function Draw() {
   const { mode, actor } = useSession();
   
+  // Hooks do Firebase
   const { doctors, loading: loadingDocs } = useDoctors();
   const { events, loading: loadingEvents } = useEvents();
 
+  // Estados
   const [area, setArea] = useState<string | null>(null);
   const [type, setType] = useState<EventType>("DRAW");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
-  
   const [isUnimedPatient, setIsUnimedPatient] = useState(false); 
   const [isSaving, setIsSaving] = useState(false);
 
+  // Preview
   const [preview, setPreview] = useState<{
     type: EventType;
     area: string;
@@ -62,39 +65,51 @@ export default function Draw() {
     setPreview(null);
   }
 
-  // --- LÓGICA DE SORTEIO BALANCEADO ---
+  // --- LÓGICA DE RODÍZIO POR DATA (Considerando INDICAÇÃO) ---
   function executeDraw() {
     if (!area || eligible.length === 0) {
-      setPreview({ error: "Sem médicos elegíveis para os filtros atuais." });
+      setPreview({ error: "Sem médicos elegíveis." });
       return;
     }
     
-    // 1. Histórico da área (Draw e Indication contam)
-    const areaHistory = events.filter(e => 
-      (e.type === "DRAW" || e.type === "INDICATION") && 
-      e.area === area
-    );
+    // 1. Mapa de Última Vez (Timestamp)
+    const lastDates: Record<string, number> = {};
     
-    // 2. Contar quantas vezes cada elegível já participou
-    const counts: Record<string, number> = {};
-    eligible.forEach(d => { counts[d.id] = 0; });
-    
-    areaHistory.forEach(e => {
-      if (counts[e.resultDoctorId] !== undefined) {
-        counts[e.resultDoctorId]++;
+    // Inicializa todos com 0 (Nunca participou = Prioridade Máxima)
+    eligible.forEach(d => { lastDates[d.id] = 0; });
+
+    // O histórico (events) vem do mais novo para o mais antigo.
+    // A primeira vez que o médico aparece na lista, é a última vez dele.
+    for (const event of events) {
+      // Ignora eventos de outras áreas
+      if (event.area !== area) continue;
+
+      const docId = event.resultDoctorId;
+      
+      // IMPORTANTE: Aqui consideramos TANTO Sorteio (DRAW) quanto Indicação (INDICATION).
+      // Se o médico foi indicado manualmente pelo Admin, conta como "Vez Usada".
+      if (lastDates[docId] !== undefined && lastDates[docId] === 0) {
+        lastDates[docId] = new Date(event.createdAt).getTime();
       }
-    });
+    }
 
-    // 3. Menor número de participações
-    const currentCounts = eligible.map(d => counts[d.id]);
-    const minCount = Math.min(...currentCounts);
-    
-    // 4. Candidatos empatados
-    const candidates = eligible.filter(d => counts[d.id] === minCount);
+    // 2. Quem tem a data mais antiga? (Ou quem tem 0)
+    // 0 ganha de 2024. Ontem ganha de Hoje.
+    const timestamps = eligible.map(d => lastDates[d.id]);
+    const minTimestamp = Math.min(...timestamps);
 
-    // 5. Sorteio
-    const winner = candidates[Math.floor(Math.random() * candidates.length)];
+    // 3. Selecionar os candidatos da vez (Fila prioritária)
+    const candidates = eligible.filter(d => lastDates[d.id] === minTimestamp);
+
+    // 4. Sorteio de desempate
+    const winnerIndex = Math.floor(Math.random() * candidates.length);
+    const winner = candidates[winnerIndex];
     
+    if (!winner) {
+      setPreview({ error: "Erro no processamento." });
+      return;
+    }
+
     setPreview({ 
       type: "DRAW", 
       area, 
@@ -104,6 +119,7 @@ export default function Draw() {
     });
   }
 
+  // Indicação Manual (Admin)
   function executeIndication() {
     if (!area || !selectedDoctorId) return;
     const doc = doctors.find(d => d.id === selectedDoctorId);
@@ -116,37 +132,24 @@ export default function Draw() {
     });
   }
 
+  // Salvar
   async function save() {
     if (!preview || "error" in preview) return;
-    
     setIsSaving(true);
     try {
-      const actorDoctorId = mode === "medicos" ? (actor?.doctorId ?? "UNKNOWN") : "ADMIN";
-      const actorDoctorName = mode === "medicos" ? (actor?.doctorName ?? "Médico") : "Admin";
-      
       await saveEventToFire({
         type: preview.type,
         area: preview.area,
-        actorDoctorId, 
-        actorDoctorName,
+        actorDoctorId: mode === "medicos" ? (actor?.doctorId ?? "UNKNOWN") : "ADMIN", 
+        actorDoctorName: mode === "medicos" ? (actor?.doctorName ?? "Médico") : "Admin",
         resultDoctorId: preview.resultDoctorId, 
         resultDoctorName: preview.resultDoctorName,
         eligibleDoctorIds: preview.eligibleIds,
       });
 
       setPreview({ ...preview, saved: true });
-      
-      setTimeout(() => { 
-        setArea(null); 
-        setSelectedDoctorId(null); 
-        setPreview(null); 
-        setIsSaving(false); 
-      }, 2000);
-      
-    } catch { 
-      alert("Erro ao salvar."); 
-      setIsSaving(false); 
-    }
+      setTimeout(() => { setArea(null); setSelectedDoctorId(null); setPreview(null); setIsSaving(false); }, 2000);
+    } catch { alert("Erro ao salvar."); setIsSaving(false); }
   }
 
   if (loading) return <div className="card"><p>Carregando sistema...</p></div>;
@@ -156,11 +159,12 @@ export default function Draw() {
       <div className="card">
         <h1 className="h1">{mode === "medicos" ? "Sorteio" : "Sorteio / Indicação"}</h1>
         
+        {/* Seletor de Modo (Admin) */}
         {mode === "admin" && (
           <div className="field">
             <label>Modo</label>
             <select value={type} onChange={(e) => setType(e.target.value as any)}>
-              <option value="DRAW">Sorteio (Aleatório)</option>
+              <option value="DRAW">Sorteio (Rodízio)</option>
               <option value="INDICATION">Indicação Manual</option>
             </select>
             <div className="hr" />
@@ -169,7 +173,7 @@ export default function Draw() {
 
         {preview && !("error" in preview) && !preview.saved && (
           <div className="notice err" style={{ marginBottom: 16 }}>
-            Salve o resultado antes de continuar.
+            Confirme o resultado para atualizar a fila.
           </div>
         )}
 
@@ -191,8 +195,8 @@ export default function Draw() {
               <span style={{ fontWeight: 600, display: "block", fontSize: 15 }}>Paciente é UNIMED?</span>
               <span style={{ fontSize: 13, color: "#666" }}>
                 {isUnimedPatient 
-                  ? "Sorteio restrito apenas a médicos credenciados." 
-                  : "Todos os médicos da escala participam."}
+                  ? "Apenas credenciados entram na fila." 
+                  : "Todos os médicos da área participam."}
               </span>
             </div>
           </label>
@@ -221,7 +225,7 @@ export default function Draw() {
             {type === "DRAW" ? (
               <div>
                 <div className="notice" style={{ marginBottom: 12 }}>
-                  {eligible.length} médico(s) disponíveis na fila de <strong>{area}</strong>.
+                  {eligible.length} médico(s) na fila de <strong>{area}</strong>.
                 </div>
                 <button 
                   className="btn primary" 
@@ -304,7 +308,7 @@ export default function Draw() {
               </div>
               
               <div style={{ fontSize: "15px", color: "#166534" }}>
-                {preview.type === "DRAW" ? "Sorteado com sucesso" : "Indicação registrada"}
+                {preview.type === "DRAW" ? "Vez no Rodízio" : "Indicação registrada"}
               </div>
             </div>
 
