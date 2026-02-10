@@ -8,7 +8,8 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
-  orderBy 
+  orderBy,
+  limit // <--- Importante para otimização
 } from "firebase/firestore";
 
 // --- TIPAGENS (Interfaces) ---
@@ -42,6 +43,7 @@ export function useDoctors() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Busca todos os médicos
     const q = query(collection(db, "doctors"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -50,7 +52,7 @@ export function useDoctors() {
         id: doc.id
       })) as Doctor[];
       
-      // Ordenação alfabética
+      // Ordenação alfabética por nome
       data.sort((a, b) => a.name.localeCompare(b.name));
       
       setDoctors(data);
@@ -68,20 +70,38 @@ export function useEvents() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Ordenado do mais recente para o mais antigo
-    const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+    // impede que o app consuma todo o plano gratuito do Firebase.
+    const q = query(
+      collection(db, "events"), 
+      orderBy("createdAt", "desc"),
+      limit(200) 
+    );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => {
         const d = doc.data();
-        // Tratamento para garantir formato de data string
+        
+        
         let createdStr = new Date().toISOString();
-        if (typeof d.createdAt === 'string') createdStr = d.createdAt;
-        else if (d.createdAt?.toDate) createdStr = d.createdAt.toDate().toISOString();
+        
+        
+        if (typeof d.createdAt === 'string') {
+            createdStr = d.createdAt;
+        } 
+        
+        else if (d.createdAt?.toDate) {
+            createdStr = d.createdAt.toDate().toISOString();
+        }
 
         return {
-          ...d,
           id: doc.id,
+          type: d.type,
+          area: d.area,
+          actorDoctorId: d.actorDoctorId,
+          actorDoctorName: d.actorDoctorName,
+          resultDoctorId: d.resultDoctorId,
+          resultDoctorName: d.resultDoctorName,
+          eligibleDoctorIds: d.eligibleDoctorIds,
           createdAt: createdStr
         };
       }) as DrawEvent[];
@@ -115,6 +135,6 @@ export async function deleteDoctorFromFire(id: string) {
 export async function saveEventToFire(data: Omit<DrawEvent, "id" | "createdAt">) {
   await addDoc(collection(db, "events"), {
     ...data,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString() // Salva sempre como string ISO para facilitar
   });
 }
