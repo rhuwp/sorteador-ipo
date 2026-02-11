@@ -47,7 +47,7 @@ export default function Login() {
               type="email" 
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="ex: totem@ipo.com"
+              placeholder="ex: email@ipo.com"
               required
             />
           </div>
@@ -76,9 +76,11 @@ export default function Login() {
         </form>
 
         <div className="hr" />
-        <p className="muted" style={{ fontSize: "12px" }}>
-          Use <strong>admin@ipo.com</strong> para gerência ou <br/>
-          <strong>totem@ipo.com</strong> para estação dos médicos.
+        <p className="muted" style={{ fontSize: "16px", color: "#555" }}>
+          Use <strong>totem@ipo.com</strong> para estação dos médicos.
+          <p className="credits" style={{fontSize: "12px"}} >
+            Rhuan Martins | T.I Hospital IPO 2026
+          </p>
         </p>
       </div>
     </div>

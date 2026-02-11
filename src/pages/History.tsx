@@ -103,7 +103,8 @@ export default function History() {
           <label>Filtrar por Área</label>
           <select value={area} onChange={e => setArea(e.target.value)}>
             <option value="ALL">Todas</option>
-            {AREAS.filter(a => a !== "Indicador Apenas").map(a => <option key={a} value={a}>{a}</option>)}
+            {/* ESCONDEMOS O INDICADOR AQUI TAMBÉM */}
+            {AREAS.filter(a => a !== "Indicador").map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
       </div>

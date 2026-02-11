@@ -1,5 +1,4 @@
 import { useState } from "react";
-// Importa Tipos e Funções do Firestore
 import { 
   useDoctors, 
   addDoctorToFire, 
@@ -7,13 +6,17 @@ import {
   deleteDoctorFromFire,
   Doctor 
 } from "../lib/firestore";
-// Importa apenas as Áreas
 import { AREAS } from "../data/seed";
+import { useSession } from "../state/SessionContext";
 
 export default function Admin() {
+  const { mode } = useSession();
   const { doctors, loading } = useDoctors();
   
-  // Estados do Modal
+  // --- NOVO: Estado para o filtro ---
+  const [filterArea, setFilterArea] = useState("ALL");
+
+  // Estados do Modal e Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -23,10 +26,19 @@ export default function Admin() {
   const [attendsUnimed, setAttendsUnimed] = useState(true);
   const [isActive, setIsActive] = useState(true);
   
-  // Estados de UI
+  // Estados de UI (Feedback)
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Bloqueio de Segurança
+  if (mode !== "admin") return <div className="notice err">Acesso negado.</div>;
+  
+  // --- LÓGICA DE FILTRAGEM ---
+  const filteredDoctors = doctors.filter(d => {
+    if (filterArea === "ALL") return true;
+    return d.areas.includes(filterArea);
+  });
 
   // --- Funções de Ação ---
 
@@ -105,16 +117,33 @@ export default function Admin() {
 
   return (
     <div className="stack">
-      {/* Cabeçalho */}
+      {/* Cabeçalho e Filtros */}
       <div className="card">
-        <div className="nav" style={{ marginBottom: 0 }}>
+        <div className="nav" style={{ marginBottom: 0, flexWrap: "wrap", gap: 10 }}>
           <div>
             <h1 className="h1" style={{ marginBottom: 4 }}>Admin</h1>
-            <p className="muted" style={{ margin: 0 }}>{doctors.length} médicos cadastrados</p>
+            <p className="muted" style={{ margin: 0 }}>
+              {filteredDoctors.length} médicos encontrados
+            </p>
           </div>
-          <button className="btn primary" onClick={handleOpenNew}>
-            + Novo Médico
-          </button>
+
+          <div className="hstack" style={{ gap: 10 }}>
+            {/* --- NOVO: Dropdown de Filtro --- */}
+            <select 
+              value={filterArea} 
+              onChange={(e) => setFilterArea(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            >
+              <option value="ALL">Todas as Áreas</option>
+              {AREAS.map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+
+            <button className="btn primary" onClick={handleOpenNew}>
+              + Novo Médico
+            </button>
+          </div>
         </div>
       </div>
 
@@ -131,7 +160,8 @@ export default function Admin() {
             </tr>
           </thead>
           <tbody>
-            {doctors.map((d: Doctor) => (
+            {/* Usamos filteredDoctors em vez de doctors */}
+            {filteredDoctors.map((d: Doctor) => (
               <tr key={d.id} style={{ opacity: d.active ? 1 : 0.6 }}>
                 <td style={{ fontWeight: 500 }}>{d.name}</td>
                 <td className="muted" style={{ fontSize: 13 }}>{d.areas.join(", ")}</td>
@@ -182,8 +212,8 @@ export default function Admin() {
                 </td>
               </tr>
             ))}
-            {doctors.length === 0 && (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: 20 }}>Nenhum médico cadastrado.</td></tr>
+            {filteredDoctors.length === 0 && (
+              <tr><td colSpan={5} style={{ textAlign: "center", padding: 20 }}>Nenhum médico encontrado com esse filtro.</td></tr>
             )}
           </tbody>
         </table>
@@ -211,9 +241,10 @@ export default function Admin() {
 
               {/* Campo Áreas */}
               <div className="field">
-                <label>Áreas de Atuação</label>
+                <label>Áreas de Atuação (Selecione "Indicador" para quem não entra na fila)</label>
                 <div className="areas-grid">
-                  {AREAS.filter(a => a !== "Indicador Apenas").map(area => (
+                  {/* Mostra TODAS as áreas, incluindo Indicador */}
+                  {AREAS.map(area => (
                     <div 
                       key={area} onClick={() => toggleArea(area)}
                       className={`area-tag ${selectedAreas.includes(area) ? "selected" : ""}`}

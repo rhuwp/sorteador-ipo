@@ -3,7 +3,6 @@ import { AREAS } from "../data/seed";
 import { useSession } from "../state/SessionContext";
 import { useDoctors, useEvents, saveEventToFire, EventType, Doctor } from "../lib/firestore";
 
-// --- Função de Filtros ---
 function getEligibleDoctors(
   doctors: Doctor[], 
   area: string, 
@@ -11,37 +10,25 @@ function getEligibleDoctors(
   isUnimedPatient: boolean
 ) {
   return doctors.filter(d => {
-    // 1. O médico deve estar Ativo
     if (!d.active) return false;
-
-    // 2. Deve ser da Área selecionada
     if (!d.areas.includes(area)) return false;
-
-    // 3. Não pode ser o próprio médico logado (se for totem)
     if (actorDoctorId && d.id === actorDoctorId) return false;
-
-    // 4. Filtro de Convênio
     if (isUnimedPatient && !d.canBeSelected) return false;
-
     return true;
   });
 }
 
 export default function Draw() {
   const { mode, actor } = useSession();
-  
-  // Hooks do Firebase
   const { doctors, loading: loadingDocs } = useDoctors();
   const { events, loading: loadingEvents } = useEvents();
 
-  // Estados
   const [area, setArea] = useState<string | null>(null);
   const [type, setType] = useState<EventType>("DRAW");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [isUnimedPatient, setIsUnimedPatient] = useState(false); 
   const [isSaving, setIsSaving] = useState(false);
 
-  // Preview
   const [preview, setPreview] = useState<{
     type: EventType;
     area: string;
@@ -65,43 +52,28 @@ export default function Draw() {
     setPreview(null);
   }
 
-  // --- LÓGICA DE RODÍZIO POR DATA (Considerando INDICAÇÃO) ---
+  // --- LÓGICA DE RODÍZIO POR DATA ---
   function executeDraw() {
     if (!area || eligible.length === 0) {
       setPreview({ error: "Sem médicos elegíveis." });
       return;
     }
     
-    // 1. Mapa de Última Vez (Timestamp)
     const lastDates: Record<string, number> = {};
-    
-    // Inicializa todos com 0 (Nunca participou = Prioridade Máxima)
     eligible.forEach(d => { lastDates[d.id] = 0; });
 
-    // O histórico (events) vem do mais novo para o mais antigo.
-    // A primeira vez que o médico aparece na lista, é a última vez dele.
     for (const event of events) {
-      // Ignora eventos de outras áreas
       if (event.area !== area) continue;
-
       const docId = event.resultDoctorId;
-      
-      // IMPORTANTE: Aqui consideramos TANTO Sorteio (DRAW) quanto Indicação (INDICATION).
-      // Se o médico foi indicado manualmente pelo Admin, conta como "Vez Usada".
       if (lastDates[docId] !== undefined && lastDates[docId] === 0) {
         lastDates[docId] = new Date(event.createdAt).getTime();
       }
     }
 
-    // 2. Quem tem a data mais antiga? (Ou quem tem 0)
-    // 0 ganha de 2024. Ontem ganha de Hoje.
     const timestamps = eligible.map(d => lastDates[d.id]);
     const minTimestamp = Math.min(...timestamps);
-
-    // 3. Selecionar os candidatos da vez (Fila prioritária)
     const candidates = eligible.filter(d => lastDates[d.id] === minTimestamp);
-
-    // 4. Sorteio de desempate
+    
     const winnerIndex = Math.floor(Math.random() * candidates.length);
     const winner = candidates[winnerIndex];
     
@@ -119,7 +91,6 @@ export default function Draw() {
     });
   }
 
-  // Indicação Manual (Admin)
   function executeIndication() {
     if (!area || !selectedDoctorId) return;
     const doc = doctors.find(d => d.id === selectedDoctorId);
@@ -132,7 +103,6 @@ export default function Draw() {
     });
   }
 
-  // Salvar
   async function save() {
     if (!preview || "error" in preview) return;
     setIsSaving(true);
@@ -159,7 +129,6 @@ export default function Draw() {
       <div className="card">
         <h1 className="h1">{mode === "medicos" ? "Sorteio" : "Sorteio / Indicação"}</h1>
         
-        {/* Seletor de Modo (Admin) */}
         {mode === "admin" && (
           <div className="field">
             <label>Modo</label>
@@ -177,7 +146,6 @@ export default function Draw() {
           </div>
         )}
 
-        {/* Checkbox Unimed */}
         <div className="field" style={{ marginBottom: 20 }}>
           <label style={{ 
             display: "flex", alignItems: "center", gap: "12px", 
@@ -204,7 +172,8 @@ export default function Draw() {
 
         <h3>1. Selecione a área</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
-          {AREAS.filter(a => a !== "Indicador Apenas").map(a => (
+          {/* AQUI ESTÁ O SEGREDO: FILTRAMOS "Indicador" PARA NÃO APARECER O BOTÃO */}
+          {AREAS.filter(a => a !== "Indicador").map(a => (
             <button 
               key={a} 
               className={`btn ${area === a ? "primary" : ""}`} 

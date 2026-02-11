@@ -6,7 +6,7 @@ export const AREAS = [
   "Cirurgia de Cabeça e Pescoço",
   "Otorrinopediatria",
   "Plásticas da Face",
-  "Indicador Apenas",
+  "Indicador",
 ];
 
 
