@@ -37,8 +37,19 @@ export default function Login() {
   return (
     <div className="stack" style={{ maxWidth: "400px", margin: "40px auto" }}>
       <div className="card" style={{ textAlign: "center" }}>
-        <h1 className="h1" style={{ marginBottom: "8px" }}>Hospital IPO</h1>
-        <p className="muted" style={{ marginBottom: "24px" }}>Acesso ao Sistema de Sorteio</p>
+        <img 
+    src="/src/images/ipo.png" 
+    alt="Hospital IPO Logo" 
+    style={{ 
+      width: "130px", 
+      height: "auto", 
+      marginBottom: "16px",
+      borderRadius: "6px", 
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)"
+    }} 
+  />
+        <h1 className="h1" style={{ marginBottom: "8px", fontFamily: "Arial, sans-serif" }}>GET MEMBER</h1>
+        <p className="muted" style={{ marginBottom: "24px" }}>Hospital IPO</p>
         
         <form onSubmit={handleLogin} className="stack">
           <div className="field">
