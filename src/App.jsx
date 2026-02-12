@@ -18,11 +18,9 @@ function TopNav() {
         
         <Link className="btn" to="/draw">Sorteio/Indicação</Link>
         
-        
         {mode === "admin" && (
           <Link className="btn" to="/history">Histórico</Link>
         )}
-        
         
         {mode === "admin" && (
           <Link className="btn" to="/admin">Admin</Link>
@@ -40,21 +38,26 @@ function TopNav() {
   );
 }
 
-
 function Guard({ children, requireMode }) {
-  const { mode, actor } = useSession();
+  // 1. loadingSession do contexto
+  const { mode, actor, loadingSession } = useSession();
   const location = useLocation();
 
-  // 1. Sem login -> Vai para Login
+  // 2. Se o Firebase ainda estiver verificando o usuário, mostramos um "Carregando..."
+  
+  if (loadingSession) {
+    return <div className="card" style={{ padding: "20px", textAlign: "center" }}>Carregando sessão...</div>;
+  }
+
+  // 3. Lógica original: Sem login -> Vai para Login
   if (!mode) return <Navigate to="/login" replace />;
 
-  
+  // 4. Se a rota exige um modo específico (ex: admin) e o usuário não tem
   if (requireMode && mode !== requireMode) {
     return <Navigate to="/draw" replace />;
   }
 
-  
-  
+  // 5. Se for médico mas ainda não se identificou (não escolheu quem é)
   if (mode === "medicos" && !actor && location.pathname !== "/identify") {
     return <Navigate to="/identify" replace />;
   }
@@ -70,7 +73,7 @@ export default function App() {
         
         <Route path="/identify" element={
           <Guard>
-            
+            <TopNav />
             <Identify />
           </Guard>
         } />
@@ -82,7 +85,6 @@ export default function App() {
           </Guard>
         } />
 
-        
         <Route path="/history" element={
           <Guard requireMode="admin">
             <TopNav />
