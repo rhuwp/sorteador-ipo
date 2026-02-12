@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
+import logoIpo from "../images/ipo.png";
 
 export default function Login() {
   const nav = useNavigate();
@@ -19,11 +20,9 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      
       if (user.email?.includes("admin")) {
         nav("/admin");
       } else {
-        
         nav("/identify");
       }
     } catch (err: any) {
@@ -37,18 +36,23 @@ export default function Login() {
   return (
     <div className="stack" style={{ maxWidth: "400px", margin: "40px auto" }}>
       <div className="card" style={{ textAlign: "center" }}>
+        
+        
         <img 
-    src="/src/images/ipo.png" 
-    alt="Hospital IPO Logo" 
-    style={{ 
-      width: "130px", 
-      height: "auto", 
-      marginBottom: "16px",
-      borderRadius: "6px", 
-      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)"
-    }} 
-  />
-        <h1 className="h1" style={{ marginBottom: "8px", fontFamily: "Arial, sans-serif" }}>GET MEMBER</h1>
+          src={logoIpo} 
+          alt="Hospital IPO Logo" 
+          style={{ 
+            width: "130px", 
+            height: "auto", 
+            marginBottom: "16px",
+            borderRadius: "6px", 
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)"
+          }} 
+        />
+
+        <h1 className="h1" style={{ marginBottom: "8px", fontFamily: "Arial, sans-serif" }}>
+          GET MEMBER
+        </h1>
         <p className="muted" style={{ marginBottom: "24px" }}>Hospital IPO</p>
         
         <form onSubmit={handleLogin} className="stack">
@@ -87,12 +91,17 @@ export default function Login() {
         </form>
 
         <div className="hr" />
-        <p className="muted" style={{ fontSize: "16px", color: "#555" }}>
-          Use <strong>totem@ipo.com</strong> para estação dos médicos.
-          <p className="credits" style={{fontSize: "12px"}} >
+        
+        <div style={{ marginTop: "16px" }}>
+          <p className="muted" style={{ fontSize: "16px", color: "#555", marginBottom: "8px" }}>
+            Use <strong>totem@ipo.com</strong> para estação dos médicos.
+          </p>
+          
+          <p className="credits" style={{ fontSize: "12px", color: "#aaa" }}>
             Rhuan Martins | T.I Hospital IPO 2026
           </p>
-        </p>
+        </div>
+
       </div>
     </div>
   );
